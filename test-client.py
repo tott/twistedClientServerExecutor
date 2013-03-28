@@ -162,17 +162,21 @@ class ExecutorFactory(protocol.ReconnectingClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         print "Connection failed - retrying!"
+        self.resetDelay()
+        self.maxDelay = 30
         try:
             protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
         except:
-            time.sleep(5)
+            pass
 
     def clientConnectionLost(self, connector, reason):
         print "Connection lost - retrying!"
+        self.resetDelay()
+        self.maxDelay = 30
         try:
             protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
         except:
-            time.sleep(5)
+            pass
 
 
 def main():
