@@ -179,7 +179,7 @@ class ExecutorFactory(protocol.ReconnectingClientFactory):
             pass
 
 
-def main():
+def find_server():
     result = get_ip_address()
     try:
         ip = result['eth0']
@@ -208,8 +208,16 @@ def main():
             server_ip = check_ip
             break
 
-    if(server_ip is None):
-        sys.exit("Could not find a server")
+    return server_ip
+
+
+def main():
+    while 1:
+        server_ip = find_server()
+        if(server_ip is None):
+            time.sleep(15)
+        else:
+            break
 
     global executor
     executor = ExecutorFactory()
