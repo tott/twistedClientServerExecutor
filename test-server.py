@@ -63,7 +63,7 @@ class PubProtocol(basic.LineReceiver):
             if(self.limit is not None):
                 self.sendLine("Sending command to {} clients".format(self.limit))
             for c in self.factory.clients:
-                if(self.limit is None or clients_done < self.limit):
+                if(self.limit is None or clients_done <= self.limit):
                     c.sendLine("{}: {}".format(self.transport.getPeer().host, line))
                     clients_done = clients_done + 1
 
