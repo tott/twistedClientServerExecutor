@@ -5,6 +5,7 @@ Simple server that forwards received messages to all connected clients.
 
 from twisted.internet import reactor, protocol
 from twisted.protocols import basic
+import re
 
 command_whitelist = {
     'uptime': 'uptime',
@@ -33,6 +34,8 @@ class PubProtocol(basic.LineReceiver):
     def __init__(self, factory):
         self.factory = factory
         self.delimiter = "\n"
+        self.limit_regex = re.compile('''limit\s(?P<limit>[0-9]+)''')
+        self.limit = None
 
     def connectionMade(self):
         print "Client connected: {}".format(self.transport.getPeer().host)
@@ -53,9 +56,16 @@ class PubProtocol(basic.LineReceiver):
             self.clients()
         elif(line.strip() == 'quit'):
             self.quit()
+        elif(self.limit_regex.match(line.strip())):
+            self.setLimit(line.strip())
         else:
+            clients_done = 0
+            if(self.limit is not None):
+                self.sendLine("Sending command to {} clients".format(self.limit))
             for c in self.factory.clients:
-                c.sendLine("{}: {}".format(self.transport.getPeer().host, line))
+                if(self.limit is None or clients_done < self.limit):
+                    c.sendLine("{}: {}".format(self.transport.getPeer().host, line))
+                    clients_done = clients_done + 1
 
     def help(self):
         self.sendLine("{}: help - This help".format(self.transport.getHost().host))
@@ -63,9 +73,19 @@ class PubProtocol(basic.LineReceiver):
         self.sendLine("{}: commands - dictionary with possible commands".format(self.transport.getHost().host))
         self.sendLine("{}: clients - get a list of connected clients".format(self.transport.getHost().host))
         self.sendLine("{}: quit - close connection".format(self.transport.getHost().host))
+        self.sendLine("{}: limit <num> - limit to <num> servers".format(self.transport.getHost().host))
 
         for command in sorted(command_whitelist.iterkeys()):
             self.sendLine("{}: {} - {}".format(self.transport.getHost().host, command, command_whitelist[command]))
+
+    def setLimit(self, line):
+        match = self.limit_regex.match(line)
+        if match:
+            line_dict = match.groupdict()
+            self.limit = int(line_dict['limit'])
+            return True
+        else:
+            return False
 
     def commands(self):
         self.sendLine("{}: {}".format(self.transport.getHost().host, command_whitelist))
