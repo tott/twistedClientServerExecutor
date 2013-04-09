@@ -65,7 +65,7 @@ class PubProtocol(basic.LineReceiver):
             for c in self.factory.clients:
                 if(self.limit is None or clients_done < self.limit):
                     c.sendLine("{}: {}".format(self.transport.getPeer().host, line))
-                    if(self.transport.getPeer().host != self.transport.getHost().host):
+                    if(c.host != self.host):
                         clients_done = clients_done + 1
 
     def help(self):
